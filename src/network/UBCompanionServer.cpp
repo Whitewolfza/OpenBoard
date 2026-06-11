@@ -84,10 +84,12 @@ void UBCompanionServer::stop()
 
     mServer->close();
 
-    for (QWebSocket *client : qAsConst(mAuthenticated))
-        client->close();
-
+    // Copy the set before iterating; closing a socket triggers onClientDisconnected()
+    // which modifies mAuthenticated, so we must not iterate the live set.
+    const QSet<QWebSocket *> toClose = mAuthenticated;
     mAuthenticated.clear();
+    for (QWebSocket *client : toClose)
+        client->close();
     emit statusChanged();
 }
 
@@ -425,9 +427,9 @@ void UBCompanionServer::handleCommand(QWebSocket *sender, const QJsonObject &cmd
 
 QString UBCompanionServer::generatePin() const
 {
-    // 6-digit numeric PIN
-    quint32 raw = QRandomGenerator::global()->bounded(1000000u);
-    return QString::number(raw).rightJustified(6, QLatin1Char('0'));
+    // 6-digit numeric PIN (100000–999999, always 6 visible digits)
+    quint32 raw = QRandomGenerator::global()->bounded(100000u, 1000000u);
+    return QString::number(raw);
 }
 
 int UBCompanionServer::pageCount() const

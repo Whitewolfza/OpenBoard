@@ -345,7 +345,7 @@
   let totalPages = 1;
   let currentTool = 'pen';
   let pendingPin = '';
-  let pageThumbs = {}; // page number → base64 jpeg (cached preview of current page only for now)
+  let pageThumbs = {}; // page number → base64 jpeg (thumbnails received from server; newest preview per page)
 
   // ── Connection ──────────────────────────────────────────────────
   function connect() {

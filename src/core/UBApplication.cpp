@@ -752,7 +752,10 @@ void UBApplication::handleOpenMessage(quint32 instanceId, QByteArray message)
 
 void UBApplication::cleanup()
 {
-    if (companionServer) { companionServer->stop(); delete companionServer; }
+    if (companionServer) {
+        companionServer->stop();
+        delete companionServer;
+    }
     if (applicationController) delete applicationController;
     if (boardController) delete boardController;
     if (webController) delete webController;
