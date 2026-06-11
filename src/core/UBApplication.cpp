@@ -61,6 +61,8 @@
 #include "gui/UBThumbnail.h"
 #include "gui/UBStartupHintsPalette.h"
 
+#include "network/UBCompanionServer.h"
+
 #include "ui_mainWindow.h"
 
 #include "frameworks/UBCryptoUtils.h"
@@ -76,6 +78,7 @@ UBApplicationController* UBApplication::applicationController = 0;
 UBBoardController* UBApplication::boardController = 0;
 UBWebController* UBApplication::webController = 0;
 UBDocumentController* UBApplication::documentController = 0;
+UBCompanionServer* UBApplication::companionServer = nullptr;
 
 UBMainWindow* UBApplication::mainWindow = 0;
 
@@ -400,6 +403,16 @@ int UBApplication::exec(const QString& pFileToImport)
 
     applicationController->initScreenLayout(bUseMultiScreen);
     boardController->setupLayout();
+
+    // Start companion WebSocket server
+    companionServer = new UBCompanionServer(staticMemoryCleaner);
+    companionServer->setBoardController(boardController);
+    if (companionServer->start(4444)) {
+        qDebug() << "UBCompanionServer: listening on port" << companionServer->port()
+                 << "| PIN:" << companionServer->pin();
+    } else {
+        qWarning() << "UBCompanionServer: failed to start on port 4444";
+    }
 
     if (pFileToImport.length() > 0)
     {
@@ -739,11 +752,13 @@ void UBApplication::handleOpenMessage(quint32 instanceId, QByteArray message)
 
 void UBApplication::cleanup()
 {
+    if (companionServer) { companionServer->stop(); delete companionServer; }
     if (applicationController) delete applicationController;
     if (boardController) delete boardController;
     if (webController) delete webController;
     if (documentController) delete documentController;
 
+    companionServer = nullptr;
     applicationController = NULL;
     boardController = NULL;
     webController = NULL;

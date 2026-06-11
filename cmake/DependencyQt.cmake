@@ -10,6 +10,7 @@ set(QT_COMPONENTS
     Svg
     UiTools
     WebEngineWidgets
+    WebSockets
     Xml
 )
 
