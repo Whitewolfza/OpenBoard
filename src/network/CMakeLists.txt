@@ -3,6 +3,8 @@ target_sources(${PROJECT_NAME} PRIVATE
     UBAutoSaver.h
     UBCookieJar.cpp
     UBCookieJar.h
+    UBCompanionServer.cpp
+    UBCompanionServer.h
     UBHttpFileDownloader.cpp
     UBHttpFileDownloader.h
     UBHttpGet.cpp

@@ -54,6 +54,7 @@ class UBApplicationController;
 class UBDisplayManager;
 class UBDocumentController;
 class UBMainWindow;
+class UBCompanionServer;
 
 class UBApplication : public SingleApplication
 {
@@ -75,6 +76,7 @@ class UBApplication : public SingleApplication
         static UBBoardController* boardController;
         static UBWebController* webController;
         static UBDocumentController* documentController;
+        static UBCompanionServer* companionServer;
 
         static UBMainWindow* mainWindow;
 
