@@ -30,6 +30,7 @@
 #include <QRectF>
 
 #include "board/UBBoardController.h"
+#include "board/UBBoardView.h"
 #include "board/UBDrawingController.h"
 #include "core/UB.h"
 #include "domain/UBGraphicsScene.h"
