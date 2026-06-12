@@ -69,7 +69,7 @@ jobs:
         run: |
           chmod +x release_scripts/linux/build.sh release_scripts/linux/package.sh
           ./release_scripts/linux/build.sh amd64
-          sudo ./release_scripts/linux/package.sh
+          OPENBOARD_ALLOW_NONROOT_PACKAGE=true ./release_scripts/linux/package.sh
 
       - name: Build Windows release package
         if: matrix.platform.id == 'windows'
@@ -131,7 +131,12 @@ jobs:
       - name: Upload assets to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-assets/**
+          files: |
+            release-assets/**/*.deb
+            release-assets/**/*.exe
+            release-assets/**/*.dmg
+            release-assets/**/*.pkg
+            release-assets/**/*.zip
 
   publish-debian-artifacts:
     name: Publish .deb artifacts to atmos_deb
