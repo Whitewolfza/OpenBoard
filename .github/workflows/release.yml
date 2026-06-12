@@ -86,7 +86,7 @@ jobs:
         if: matrix.platform.id == 'macos'
         shell: bash
         run: |
-          chmod +x release_scripts/osx/*.sh
+          chmod +x release_scripts/osx/build.sh release_scripts/osx/package.sh
           ./release_scripts/osx/build.sh
           ./release_scripts/osx/package.sh
 
@@ -197,10 +197,6 @@ jobs:
             exit 1
           fi
 
-          RELEASE_REF="${GITHUB_REF_NAME}"
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            RELEASE_REF="${GITHUB_REF#refs/tags/}"
-          fi
           if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
             RELEASE_REF="${{ github.event.release.tag_name }}"
           elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
@@ -209,6 +205,10 @@ jobs:
               echo "For workflow_dispatch, set the release_ref input (for example: v1.7.7)"
               exit 1
             fi
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            RELEASE_REF="${GITHUB_REF#refs/tags/}"
+          else
+            RELEASE_REF="${GITHUB_REF_NAME}"
           fi
 
           destination="atmos_deb/${ATMOS_DEB_TARGET_DIR}/${RELEASE_REF}"
