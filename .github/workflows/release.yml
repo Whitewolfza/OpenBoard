@@ -1,0 +1,226 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_ref:
+        description: "Release tag/folder name for manual runs (example: v1.7.7)"
+        required: false
+        type: string
+      publish_deb:
+        description: "Publish Linux .deb artifacts to Whitewolfza/atmos_deb"
+        required: false
+        default: true
+        type: boolean
+  push:
+    tags:
+      - "v*"
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+# Required setup:
+# - secrets.ATMOS_DEB_TOKEN: PAT with contents:write access to Whitewolfza/atmos_deb
+# Optional setup:
+# - vars.ATMOS_DEB_BRANCH: branch in Whitewolfza/atmos_deb (default: main)
+# - vars.ATMOS_DEB_TARGET_DIR: destination directory in Whitewolfza/atmos_deb (default: pool/main/openboard)
+env:
+  ATMOS_DEB_REPOSITORY: Whitewolfza/atmos_deb
+  ATMOS_DEB_BRANCH: ${{ vars.ATMOS_DEB_BRANCH || 'main' }}
+  ATMOS_DEB_TARGET_DIR: ${{ vars.ATMOS_DEB_TARGET_DIR || 'pool/main/openboard' }}
+
+jobs:
+  build-release:
+    name: Build ${{ matrix.platform.name }} release artifact
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - id: linux
+            name: Linux
+            runner: ubuntu-24.04
+          - id: windows
+            name: Windows
+            runner: windows-2022
+          - id: macos
+            name: macOS
+            runner: macos-14
+
+    steps:
+      - name: Checkout OpenBoard
+        uses: actions/checkout@v4
+
+      - name: Checkout OpenBoard-ThirdParty
+        shell: bash
+        run: git clone --depth 1 https://github.com/OpenBoard-org/OpenBoard-ThirdParty.git ../OpenBoard-ThirdParty
+
+      - name: Install Linux packaging prerequisites
+        if: matrix.platform.id == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev lsb-release
+
+      - name: Build Linux release package
+        if: matrix.platform.id == 'linux'
+        shell: bash
+        run: |
+          chmod +x release_scripts/linux/build.sh release_scripts/linux/package.sh
+          ./release_scripts/linux/build.sh amd64
+          OPENBOARD_ALLOW_NONROOT_PACKAGE=true ./release_scripts/linux/package.sh
+
+      - name: Build Windows release package
+        if: matrix.platform.id == 'windows'
+        shell: cmd
+        run: |
+          choco install innosetup --yes --no-progress
+          release_scripts\windows\release.win7.vc9.bat
+
+      - name: Build macOS release package
+        if: matrix.platform.id == 'macos'
+        shell: bash
+        run: |
+          chmod +x release_scripts/osx/build.sh release_scripts/osx/package.sh
+          ./release_scripts/osx/build.sh
+          ./release_scripts/osx/package.sh
+
+      - name: Collect Linux artifacts
+        if: matrix.platform.id == 'linux'
+        shell: bash
+        run: |
+          mkdir -p artifacts/linux
+          cp install/linux/* artifacts/linux/
+
+      - name: Collect Windows artifacts
+        if: matrix.platform.id == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts/windows | Out-Null
+          Copy-Item -Path install/win32/* -Destination artifacts/windows -Recurse -Force
+
+      - name: Collect macOS artifacts
+        if: matrix.platform.id == 'macos'
+        shell: bash
+        run: |
+          mkdir -p artifacts/macos
+          cp install/mac/* artifacts/macos/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openboard-${{ matrix.platform.id }}
+          path: artifacts/${{ matrix.platform.id }}/
+          if-no-files-found: error
+
+  publish-release-assets:
+    name: Publish GitHub release assets
+    needs:
+      - build-release
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Upload assets to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-assets/**/*.deb
+            release-assets/**/*.exe
+            release-assets/**/*.dmg
+            release-assets/**/*.pkg
+            release-assets/**/*.zip
+
+  publish-debian-artifacts:
+    name: Publish .deb artifacts to atmos_deb
+    needs:
+      - build-release
+    runs-on: ubuntu-24.04
+    # Run for release/tag events by default; for manual dispatch only when publish_deb is true.
+    if: >-
+      (
+        github.event_name == 'release' ||
+        startsWith(github.ref, 'refs/tags/') ||
+        github.event_name == 'workflow_dispatch'
+      ) && (
+        github.event_name != 'workflow_dispatch' ||
+        inputs.publish_deb
+      )
+
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: openboard-linux
+          path: deb-artifacts
+
+      - name: Keep only .deb files
+        shell: bash
+        run: |
+          mkdir -p deb-only
+          shopt -s nullglob
+          for file in deb-artifacts/*; do
+            if [[ "$file" == *.deb ]]; then
+              cp "$file" deb-only/
+            fi
+          done
+          ls -la deb-only
+
+      - name: Checkout atmos_deb repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.ATMOS_DEB_REPOSITORY }}
+          ref: ${{ env.ATMOS_DEB_BRANCH }}
+          token: ${{ secrets.ATMOS_DEB_TOKEN }}
+          path: atmos_deb
+
+      - name: Publish Debian artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          shopt -s nullglob
+          debs=(deb-only/*.deb)
+          if [ ${#debs[@]} -eq 0 ]; then
+            echo "No .deb artifacts were produced"
+            exit 1
+          fi
+
+          if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
+            RELEASE_REF="${{ github.event.release.tag_name }}"
+          elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            RELEASE_REF="${{ inputs.release_ref || '' }}"
+            if [ -z "${RELEASE_REF}" ]; then
+              echo "For workflow_dispatch, set the release_ref input (for example: v1.7.7)"
+              exit 1
+            fi
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            RELEASE_REF="${GITHUB_REF#refs/tags/}"
+          else
+            RELEASE_REF="${GITHUB_REF_NAME}"
+          fi
+
+          destination="atmos_deb/${ATMOS_DEB_TARGET_DIR}/${RELEASE_REF}"
+          mkdir -p "${destination}"
+          cp deb-only/*.deb "${destination}/"
+
+          cd atmos_deb
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${ATMOS_DEB_TARGET_DIR}/${RELEASE_REF}"
+
+          if git diff --cached --quiet; then
+            echo "No changes to publish"
+            exit 0
+          fi
+
+          git commit -m "Publish OpenBoard Debian packages for ${RELEASE_REF}"
+          git push origin "${ATMOS_DEB_BRANCH}"

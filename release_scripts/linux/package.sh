@@ -104,8 +104,16 @@ initializeVariables()
 
 checkUser()
 {
-  if [ `id -u` -ne 0 ]; then
-    echo "Please run the script as root" 
+  # CI override supports true/1/yes (case-insensitive).
+  ALLOW_NONROOT="${OPENBOARD_ALLOW_NONROOT_PACKAGE:-false}"
+  case "${ALLOW_NONROOT,,}" in
+    true|1|yes) ALLOW_NONROOT=true ;;
+    *) ALLOW_NONROOT=false ;;
+  esac
+
+  if [ "$(id -u)" -ne 0 ] && [ "${ALLOW_NONROOT}" != "true" ]; then
+    echo "Please run the script as root"
+    echo "or set OPENBOARD_ALLOW_NONROOT_PACKAGE=true for CI packaging."
     exit 1
   fi
 }
@@ -186,7 +194,9 @@ rm -rf $PACKAGE_BUILD_DIR
 
 notifyProgress "Copying product directory and resources"
 cp -R $PRODUCT_PATH/* $PACKAGE_DIRECTORY
-chown -R root:root $PACKAGE_DIRECTORY
+if [ "$(id -u)" -eq 0 ]; then
+    chown -R root:root $PACKAGE_DIRECTORY
+fi
 
 cp -R resources/customizations $PACKAGE_DIRECTORY/
 cp resources/linux/openboard-ubz.xml $PACKAGE_DIRECTORY/etc/
