@@ -104,7 +104,7 @@ initializeVariables()
 
 checkUser()
 {
-  if [ `id -u` -ne 0 ] && [ "${OPENBOARD_ALLOW_NONROOT_PACKAGE:-false}" != "true" ]; then
+  if [ "$(id -u)" -ne 0 ] && [ "${OPENBOARD_ALLOW_NONROOT_PACKAGE:-false}" != "true" ]; then
     echo "Please run the script as root"
     echo "or set OPENBOARD_ALLOW_NONROOT_PACKAGE=true for CI packaging."
     exit 1
@@ -187,7 +187,7 @@ rm -rf $PACKAGE_BUILD_DIR
 
 notifyProgress "Copying product directory and resources"
 cp -R $PRODUCT_PATH/* $PACKAGE_DIRECTORY
-if [ `id -u` -eq 0 ]; then
+if [ "$(id -u)" -eq 0 ]; then
     chown -R root:root $PACKAGE_DIRECTORY
 fi
 

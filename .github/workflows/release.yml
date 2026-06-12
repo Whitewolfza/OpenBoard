@@ -198,6 +198,9 @@ jobs:
           fi
 
           RELEASE_REF="${GITHUB_REF_NAME}"
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            RELEASE_REF="${GITHUB_REF#refs/tags/}"
+          fi
           if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
             RELEASE_REF="${{ github.event.release.tag_name }}"
           elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
