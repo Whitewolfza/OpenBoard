@@ -142,7 +142,7 @@ addQtTranslations
 
 cp -R resources/customizations $PRODUCT_DIR/$APPLICATION_NAME.app/Contents/Resources
 cp -R resources/startupHints $PRODUCT_DIR/$APPLICATION_NAME.app/Contents/Resources
-if [ -n "$importerDir" ] && [ -n "$importerName" ]; then
+if [ -n "$importerDir" ] && [ -n "$importerName" ] && [ -d "$importerDir/$importerName.app" ]; then
     cp -R "$importerDir/$importerName.app" "$PRODUCT_DIR/$APPLICATION_NAME.app/Contents/Resources"
 fi
 
