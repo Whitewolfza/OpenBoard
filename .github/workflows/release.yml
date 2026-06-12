@@ -56,10 +56,7 @@ jobs:
 
       - name: Checkout OpenBoard-ThirdParty
         shell: bash
-        run: |
-          if [ ! -d ../OpenBoard-ThirdParty ]; then
-            git clone --depth 1 https://github.com/OpenBoard-org/OpenBoard-ThirdParty.git ../OpenBoard-ThirdParty
-          fi
+        run: git clone --depth 1 https://github.com/OpenBoard-org/OpenBoard-ThirdParty.git ../OpenBoard-ThirdParty
 
       - name: Install Linux packaging prerequisites
         if: matrix.platform.id == 'linux'

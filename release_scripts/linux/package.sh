@@ -104,6 +104,7 @@ initializeVariables()
 
 checkUser()
 {
+  # CI override supports true/1/yes (case-insensitive).
   ALLOW_NONROOT="${OPENBOARD_ALLOW_NONROOT_PACKAGE:-false}"
   case "${ALLOW_NONROOT,,}" in
     true|1|yes) ALLOW_NONROOT=true ;;
