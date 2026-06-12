@@ -89,17 +89,44 @@ initializeVariables()
   BUNDLE_QT=true
 
   # Qt installation path. This may vary across machines
-  QT_PATH="/home/dev/Qt/6.9.3/gcc_64"
-  QT_SHARE_PATH="/usr/share/qt5/"
-  GUI_TRANSLATIONS_DIRECTORY_PATH="$QT_PATH/translations"
-  QT_LIBRARY_SOURCE_PATH="$QT_PATH/lib"
-  QT_LIBRARY_EXECUTABLES_SOURCE_PATH="$QT_PATH/libexec"
-  QT_PLUGINS_SOURCE_PATH="$QT_PATH/plugins"
-  QT_RESOURCES_SOURCE_PATH="$QT_PATH/resources"
-  QT_TRANSLATIONS_SOURCE_PATH="$QT_PATH/translations"
+  QT_PATH="${QT_PATH:-/home/dev/Qt/6.9.3/gcc_64}"
+  QT_SHARE_PATH="${QT_SHARE_PATH:-/usr/share/qt5/}"
+  GUI_TRANSLATIONS_DIRECTORY_PATH="${GUI_TRANSLATIONS_DIRECTORY_PATH:-$QT_PATH/translations}"
+  QT_LIBRARY_SOURCE_PATH="${QT_LIBRARY_SOURCE_PATH:-$QT_PATH/lib}"
+  QT_LIBRARY_EXECUTABLES_SOURCE_PATH="${QT_LIBRARY_EXECUTABLES_SOURCE_PATH:-$QT_PATH/libexec}"
+  QT_PLUGINS_SOURCE_PATH="${QT_PLUGINS_SOURCE_PATH:-$QT_PATH/plugins}"
+  QT_RESOURCES_SOURCE_PATH="${QT_RESOURCES_SOURCE_PATH:-$QT_PATH/resources}"
+  QT_TRANSLATIONS_SOURCE_PATH="${QT_TRANSLATIONS_SOURCE_PATH:-$QT_PATH/translations}"
 
   NOTIFY_CMD=`which notify-send`
   ZIP_PATH=`which zip`
+}
+
+configureQtPaths()
+{
+  QMAKE_PATH="${QMAKE_PATH:-`which qmake6 2>/dev/null`}"
+  if [ -z "$QMAKE_PATH" ]; then
+    QMAKE_PATH=`which qmake 2>/dev/null`
+  fi
+
+  if [ -x "$QMAKE_PATH" ]; then
+    if [ ! -d "$QT_LIBRARY_SOURCE_PATH" ]; then
+      QT_LIBRARY_SOURCE_PATH=`$QMAKE_PATH -query QT_INSTALL_LIBS 2>/dev/null`
+    fi
+    if [ ! -d "$QT_LIBRARY_EXECUTABLES_SOURCE_PATH" ]; then
+      QT_LIBRARY_EXECUTABLES_SOURCE_PATH=`$QMAKE_PATH -query QT_INSTALL_LIBEXECS 2>/dev/null`
+    fi
+    if [ ! -d "$QT_PLUGINS_SOURCE_PATH" ]; then
+      QT_PLUGINS_SOURCE_PATH=`$QMAKE_PATH -query QT_INSTALL_PLUGINS 2>/dev/null`
+    fi
+    if [ ! -d "$QT_TRANSLATIONS_SOURCE_PATH" ]; then
+      QT_TRANSLATIONS_SOURCE_PATH=`$QMAKE_PATH -query QT_INSTALL_TRANSLATIONS 2>/dev/null`
+    fi
+    if [ ! -d "$QT_RESOURCES_SOURCE_PATH" ]; then
+      QT_DATA_PATH=`$QMAKE_PATH -query QT_INSTALL_DATA 2>/dev/null`
+      QT_RESOURCES_SOURCE_PATH="$QT_DATA_PATH/resources"
+    fi
+  fi
 }
 
 checkUser()
@@ -180,6 +207,7 @@ removeQtDebugFiles()
 
 
 initializeVariables
+configureQtPaths
 
 checkBuild
 checkUser
@@ -310,7 +338,9 @@ cp $QT_LIBRARY_SOURCE_PATH/libavformat* $QT_LIBRARY_DEST_PATH/
 cp $QT_LIBRARY_SOURCE_PATH/libavutil* $QT_LIBRARY_DEST_PATH/
 cp $QT_LIBRARY_SOURCE_PATH/libswscale* $QT_LIBRARY_DEST_PATH/
 cp $QT_LIBRARY_SOURCE_PATH/libswresample* $QT_LIBRARY_DEST_PATH/
-cp $QT_LIBRARY_SOURCE_PATH/libQt6FFmpegStub* $QT_LIBRARY_DEST_PATH/
+if ls "$QT_LIBRARY_SOURCE_PATH/libQt6FFmpegStub"* &> /dev/null; then
+    cp $QT_LIBRARY_SOURCE_PATH/libQt6FFmpegStub* $QT_LIBRARY_DEST_PATH/
+fi
 
 # ----------------------------------------------------------------------------
 # DEBIAN directory of package (control, md5sums, postinst etc)

@@ -36,6 +36,7 @@ QT += uitools
 QT += multimedia
 QT += multimediawidgets
 QT += webenginewidgets
+QT += websockets
 QT += printsupport
 QT += core
 QT += concurrent
@@ -532,4 +533,3 @@ INSTALLS = UB_ETC \
 DISTFILES += \
     resources/images/moveDown.svg \
     resources/images/moveDownDisabled.svg
-

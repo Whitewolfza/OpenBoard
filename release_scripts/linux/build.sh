@@ -26,11 +26,11 @@ initializeVariables()
   PRODUCT_PATH="$BUILD_DIR/product"
 
   # Qt installation path. This may vary across machines
-  QT_PATH="/home/dev/Qt/6.9.3/gcc_64"
-  PLUGINS_PATH="$QT_PATH/plugins"
-  GUI_TRANSLATIONS_DIRECTORY_PATH="$QT_PATH/translations"
-  QMAKE_PATH="$QT_PATH/bin/qmake"
-  LRELEASES="$QT_PATH/bin/lrelease"
+  QT_PATH="${QT_PATH:-/home/dev/Qt/6.9.3/gcc_64}"
+  PLUGINS_PATH="${PLUGINS_PATH:-$QT_PATH/plugins}"
+  GUI_TRANSLATIONS_DIRECTORY_PATH="${GUI_TRANSLATIONS_DIRECTORY_PATH:-$QT_PATH/translations}"
+  QMAKE_PATH="${QMAKE_PATH:-$QT_PATH/bin/qmake}"
+  LRELEASES="${LRELEASES:-$QT_PATH/bin/lrelease}"
 
   NOTIFY_CMD=`which notify-send`
   ZIP_PATH=`which zip`
@@ -44,6 +44,33 @@ initializeVariables()
         QT_PATH="/usr/lib/arm-linux-gnueabihf/qt5"
     fi
   fi
+}
+
+configureQtPaths(){
+    if [ ! -x "$QMAKE_PATH" ]; then
+        QMAKE_PATH=`which qmake6 2>/dev/null`
+    fi
+    if [ ! -x "$QMAKE_PATH" ]; then
+        QMAKE_PATH=`which qmake 2>/dev/null`
+    fi
+
+    if [ -x "$QMAKE_PATH" ]; then
+        if [ ! -d "$QT_PATH" ]; then
+            QT_PATH=`$QMAKE_PATH -query QT_INSTALL_PREFIX 2>/dev/null`
+        fi
+        if [ ! -d "$PLUGINS_PATH" ]; then
+            PLUGINS_PATH=`$QMAKE_PATH -query QT_INSTALL_PLUGINS 2>/dev/null`
+        fi
+        if [ ! -d "$GUI_TRANSLATIONS_DIRECTORY_PATH" ]; then
+            GUI_TRANSLATIONS_DIRECTORY_PATH=`$QMAKE_PATH -query QT_INSTALL_TRANSLATIONS 2>/dev/null`
+        fi
+        if [ ! -x "$LRELEASES" ]; then
+            QT_BIN_PATH=`$QMAKE_PATH -query QT_INSTALL_BINS 2>/dev/null`
+            if [ -x "$QT_BIN_PATH/lrelease" ]; then
+                LRELEASES="$QT_BIN_PATH/lrelease"
+            fi
+        fi
+    fi
 }
 
 notifyError(){
@@ -110,7 +137,7 @@ done
 
 
 initializeVariables
-#buildWithStandardQt
+configureQtPaths
 createBuildContext
 
 cd $PROJECT_ROOT
@@ -131,9 +158,11 @@ rm -rf $BUILD_DIR
 # Generate translations
 notifyProgress "QT" "Internationalization"
 $LRELEASES ${APPLICATION_NAME}.pro
-cd $GUI_TRANSLATIONS_DIRECTORY_PATH
-$LRELEASES translations.pro
-cd -
+if [ -f "$GUI_TRANSLATIONS_DIRECTORY_PATH/translations.pro" ] && [ -w "$GUI_TRANSLATIONS_DIRECTORY_PATH" ]; then
+    cd $GUI_TRANSLATIONS_DIRECTORY_PATH
+    $LRELEASES translations.pro
+    cd -
+fi
 
 notifyProgress "${APPLICATION_NAME}" "Building ${APPLICATION_NAME}"
 

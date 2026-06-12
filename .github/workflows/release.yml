@@ -62,7 +62,23 @@ jobs:
         if: matrix.platform.id == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev lsb-release
+          sudo apt-get install -y \
+            dpkg-dev \
+            lsb-release \
+            qt6-base-dev \
+            qt6-base-dev-tools \
+            qt6-5compat-dev \
+            qt6-tools-dev \
+            qt6-tools-dev-tools \
+            qt6-l10n-tools \
+            qt6-multimedia-dev \
+            qt6-svg-dev \
+            qt6-websockets-dev \
+            qt6-webengine-dev \
+            libquazip1-qt6-dev \
+            libpoppler-dev \
+            libpoppler-cpp-dev \
+            libpoppler-private-dev
 
       - name: Build Linux release package
         if: matrix.platform.id == 'linux'
