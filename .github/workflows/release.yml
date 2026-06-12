@@ -26,11 +26,11 @@ permissions:
 # - secrets.ATMOS_DEB_TOKEN: PAT with contents:write access to Whitewolfza/atmos_deb
 # Optional setup:
 # - vars.ATMOS_DEB_BRANCH: branch in Whitewolfza/atmos_deb (default: main)
-# - vars.ATMOS_DEB_TARGET_DIR: destination directory in Whitewolfza/atmos_deb (default: packages/openboard)
+# - vars.ATMOS_DEB_TARGET_DIR: destination directory in Whitewolfza/atmos_deb (default: pool/main/openboard)
 env:
   ATMOS_DEB_REPOSITORY: Whitewolfza/atmos_deb
   ATMOS_DEB_BRANCH: ${{ vars.ATMOS_DEB_BRANCH || 'main' }}
-  ATMOS_DEB_TARGET_DIR: ${{ vars.ATMOS_DEB_TARGET_DIR || 'packages/openboard' }}
+  ATMOS_DEB_TARGET_DIR: ${{ vars.ATMOS_DEB_TARGET_DIR || 'pool/main/openboard' }}
 
 jobs:
   build-release:
