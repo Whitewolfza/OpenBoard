@@ -79,9 +79,15 @@ jobs:
           choco install innosetup --yes --no-progress
           release_scripts\windows\release.win7.vc9.bat
 
+      - name: Install Qt (macOS)
+        if: matrix.platform.id == 'macos'
+        run: brew install qt
+
       - name: Build macOS release package
         if: matrix.platform.id == 'macos'
         shell: bash
+        env:
+          BASE_QT_DIR: /opt/homebrew/opt/qt
         run: |
           chmod +x release_scripts/osx/build.sh release_scripts/osx/package.sh
           ./release_scripts/osx/build.sh

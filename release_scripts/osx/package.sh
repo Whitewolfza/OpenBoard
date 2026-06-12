@@ -21,7 +21,7 @@ PROJECT_ROOT="$SCRIPT_PATH/../.."
 
 
 APPLICATION_NAME="OpenBoard"
-BASE_QT_DIR=/Users/dev/Qt/6.9.3/macos
+BASE_QT_DIR=${BASE_QT_DIR:-/Users/dev/Qt/6.9.3/macos}
 # Executables
 QMAKE=$BASE_QT_DIR/bin/qmake
 MACDEPLOYQT=$BASE_QT_DIR/bin/macdeployqt
@@ -86,7 +86,6 @@ checkExecutable "$DMGUTIL"
 checkExecutable "$DSYMUTIL"
 checkExecutable "$STRIP"
 checkExecutable "$PLISTBUDDY"
-checkExecutable "$ICEBERG"
 checkExecutable "$LRELEASE"
 
 DMG="$APPLICATION_NAME.dmg"
@@ -114,6 +113,7 @@ GSYM_i386="$PRODUCT_DIR/$APPLICATION_NAME i386.sym"
 INFO_PLIST="$APP/Contents/Info.plist"
 
 if [ "$1" == "pkg" ]; then
+    checkExecutable "$ICEBERG"
     BASE_ICEBERG_CONFIG_FILE="$SCRIPT_PATH/$APPLICATION_NAME.packproj"
     #copy the standard file for working with
     ICEBERG_CONFIG_FILE="$APPLICATION_NAME-working.packproj"
