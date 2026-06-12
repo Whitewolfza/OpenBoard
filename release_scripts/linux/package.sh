@@ -104,7 +104,13 @@ initializeVariables()
 
 checkUser()
 {
-  if [ "$(id -u)" -ne 0 ] && [ "${OPENBOARD_ALLOW_NONROOT_PACKAGE:-false}" != "true" ]; then
+  ALLOW_NONROOT="${OPENBOARD_ALLOW_NONROOT_PACKAGE:-false}"
+  case "${ALLOW_NONROOT,,}" in
+    true|1|yes) ALLOW_NONROOT=true ;;
+    *) ALLOW_NONROOT=false ;;
+  esac
+
+  if [ "$(id -u)" -ne 0 ] && [ "${ALLOW_NONROOT}" != "true" ]; then
     echo "Please run the script as root"
     echo "or set OPENBOARD_ALLOW_NONROOT_PACKAGE=true for CI packaging."
     exit 1

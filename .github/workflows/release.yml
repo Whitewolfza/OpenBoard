@@ -204,7 +204,7 @@ jobs:
           if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
             RELEASE_REF="${{ github.event.release.tag_name }}"
           elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            RELEASE_REF="${{ inputs.release_ref }}"
+            RELEASE_REF="${{ inputs.release_ref || '' }}"
             if [ -z "${RELEASE_REF}" ]; then
               echo "For workflow_dispatch, set the release_ref input (for example: v1.7.7)"
               exit 1
